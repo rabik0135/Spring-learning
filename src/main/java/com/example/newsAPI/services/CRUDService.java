@@ -6,6 +6,6 @@ public interface CRUDService<T> {
     T getById(Long id);
     Collection<T> getAll();
     T create(T item);
-    void update(Long id, T item);
+    T update(T item);
     T deleteById(Long id);
 }

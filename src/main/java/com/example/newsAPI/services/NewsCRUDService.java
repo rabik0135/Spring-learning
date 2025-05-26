@@ -1,57 +1,95 @@
 package com.example.newsAPI.services;
 
 import com.example.newsAPI.dto.NewsDto;
+import com.example.newsAPI.entiity.Category;
+import com.example.newsAPI.entiity.News;
+import com.example.newsAPI.exception.ResourceNotFoundException;
+import com.example.newsAPI.repositories.CategoryRepository;
+import com.example.newsAPI.repositories.NewsRepository;
+import com.example.newsAPI.utils.NewsCategoryMapper;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
 import java.util.Collection;
-import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.List;
 
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class NewsCRUDService implements CRUDService<NewsDto> {
 
-    private final ConcurrentHashMap<Long, NewsDto> storage = new ConcurrentHashMap<>();
+    private final NewsRepository newsRepository;
+    private final CategoryRepository categoryRepository;
+    private final NewsCategoryMapper mapper;
 
     @Override
     public NewsDto getById(Long id) {
-        System.out.println("Get by ID: " + id);
-        return storage.get(id);
+        log.info("Get by ID: " + id);
+        return mapper.toDto(newsRepository.findById(id).orElseThrow(
+                () -> new ResourceNotFoundException("News with id " + id + " not found")
+        ));
     }
 
     @Override
     public Collection<NewsDto> getAll() {
-        System.out.println("Get all");
-        return storage.values();
-    }
-
-    @Override
-    public NewsDto create(NewsDto item) {
-        System.out.println("Create");
-        Long nextId = (storage.isEmpty() ? 0 : (storage.mappingCount())) + 1;
-        item.setId(nextId);
-        item.setDate(Instant.now());
-        storage.put(nextId, item);
-        return item;
-    }
-
-    @Override
-    public void update(Long id, NewsDto item) {
-        System.out.println("Update " + id);
-        if (!storage.containsKey(id)) {
-            return;
+        log.info("Get all");
+        Collection<NewsDto> dtos = newsRepository.findAll()
+                .stream()
+                .map(mapper::toDto)
+                .toList();
+        if (dtos.isEmpty()) {
+            throw new ResourceNotFoundException("There are no news");
+        } else {
+            return dtos;
         }
-        item.setId(id);
-        item.setDate(Instant.now());
-        storage.put(id, item);
+    }
+
+    @Override
+    public NewsDto create(NewsDto newsDto) {
+        log.info("Create");
+        News news = mapper.toEntity(newsDto);
+        Category category = categoryRepository.findByTitle(newsDto.getCategory()).orElseThrow(
+                () -> new ResourceNotFoundException("Category not found:" + newsDto.getCategory())
+        );
+
+        news.setCategory(category);
+        newsRepository.save(news);
+        return newsDto;
+    }
+
+    @Override
+    public NewsDto update(NewsDto newsDto) {
+        log.info("Update ");
+        News news = mapper.toEntity(newsDto);
+        Category category = categoryRepository.findByTitle(newsDto.getCategory()).orElseThrow(
+                () -> new ResourceNotFoundException("Category not found:" + newsDto.getCategory())
+        );
+
+        news.setCategory(category);
+        newsRepository.save(news);
+        return newsDto;
     }
 
     @Override
     public NewsDto deleteById(Long id) {
-        System.out.println("Delete");
-        if (!storage.containsKey(id)) {
-            return null;
+        log.info("Delete");
+        NewsDto newsDto = mapper.toDto(newsRepository.findById(id).orElseThrow(
+                () -> new ResourceNotFoundException("News with id " + id + " not found")
+        ));
+        newsRepository.deleteById(id);
+        return newsDto;
+    }
+
+    public Collection<NewsDto> getNewsByCategory(String categoryTitle) {
+        Collection<NewsDto> dtos = newsRepository.findByCategoryTitle(categoryTitle)
+                .stream()
+                .map(mapper::toDto)
+                .toList();
+        if (dtos.isEmpty()) {
+            throw new ResourceNotFoundException("There are no news with category " + categoryTitle);
+        } else {
+            return dtos;
         }
-        return storage.remove(id);
     }
 }

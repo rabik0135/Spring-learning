@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet id="createNewsTable" author="ivan">
+        <createTable tableName="news">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="title" type="text"/>
+            <column name="text" type="text"/>
+            <column name="publication_date" type="bigint"/>
+            <column name="category_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="createCategoryTable" author="ivan">
+        <createTable tableName="category">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="title" type="varchar(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="addForeignKeyNewsToCategory" author="ivan">
+        <addForeignKeyConstraint baseTableName="news"
+                                 baseColumnNames="category_id"
+                                 constraintName="fk_news_category"
+                                 referencedTableName="category"
+                                 referencedColumnNames="id" onDelete="CASCADE"/>
+
+    </changeSet>
+</databaseChangeLog>

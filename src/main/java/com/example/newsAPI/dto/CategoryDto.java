@@ -2,17 +2,12 @@ package com.example.newsAPI.dto;
 
 import lombok.*;
 
-import java.time.Instant;
-
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
 @Builder
-public class NewsDto {
+public class CategoryDto {
     private Long id;
     private String title;
-    private String text;
-    private Instant date;
-    private String category;
 }
